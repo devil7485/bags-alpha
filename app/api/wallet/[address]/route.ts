@@ -1,19 +1,17 @@
 import { NextRequest } from "next/server";
-import { supabaseAdmin as supabase } from "@/lib/supabase-admin";
+import { getSupabaseAdmin } from "@/lib/supabase-admin";
 
 export async function GET(
-  request: NextRequest,
+  _req: NextRequest,
   context: any
 ) {
+  const supabase = getSupabaseAdmin();
+
   try {
-    // IMPORTANT: read params inside the function
     const address = context.params?.address;
 
     if (!address) {
-      return Response.json(
-        { error: "Wallet address missing" },
-        { status: 400 }
-      );
+      return Response.json({ error: "Missing address" }, { status: 400 });
     }
 
     const [walletStats, alphaStats, devStats] = await Promise.all([
@@ -22,13 +20,11 @@ export async function GET(
         .select("*")
         .eq("wallet", address)
         .maybeSingle(),
-
       supabase
         .from("alpha_stats")
         .select("*")
         .eq("wallet", address)
         .maybeSingle(),
-
       supabase
         .from("dev_stats")
         .select("*")
@@ -43,9 +39,6 @@ export async function GET(
       dev_stats: devStats.data ?? null,
     });
   } catch (e: any) {
-    return Response.json(
-      { error: e.message },
-      { status: 500 }
-    );
+    return Response.json({ error: e.message }, { status: 500 });
   }
 }

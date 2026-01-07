@@ -1,15 +1,20 @@
-import { supabaseAdmin as supabase } from "@/lib/supabase-admin";
-
+import { getSupabaseAdmin } from "@/lib/supabase-admin";
 
 export async function GET() {
+  const supabase = getSupabaseAdmin();
+
   try {
     console.log("---- BAGS ENRICH START ----");
 
-    const { data: tokens } = await supabase
+    const { data: tokens, error } = await supabase
       .from("tokens")
       .select("token_mint")
       .eq("creator_wallet", "unknown")
       .limit(10);
+
+    if (error) {
+      return Response.json({ error: error.message }, { status: 500 });
+    }
 
     let enriched = 0;
 

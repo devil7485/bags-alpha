@@ -1,4 +1,7 @@
-import { supabaseAdmin as supabase } from "@/lib/supabase-admin";
+import { getSupabaseAdmin } from "@/lib/supabase-admin";
+
+const supabase = getSupabaseAdmin();
+
 
 
 export async function GET() {

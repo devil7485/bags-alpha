@@ -1,5 +1,4 @@
-import { supabaseAdmin as supabase } from "@/lib/supabase-admin";
-
+import { getSupabaseAdmin } from "@/lib/supabase-admin";
 
 const RPC_URL = process.env.SOLANA_RPC_URL!;
 
@@ -7,6 +6,8 @@ const RPC_URL = process.env.SOLANA_RPC_URL!;
 const RAYDIUM_AMM = "RVKd61ztZW9GdWc2r9nqCuWHa3gwPrmT2y1k4EYBLET";
 
 export async function GET() {
+  const supabase = getSupabaseAdmin();
+
   try {
     console.log("---- ONCHAIN DISCOVERY START ----");
 
