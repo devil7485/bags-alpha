@@ -1,32 +1,23 @@
+import { getSupabaseAdmin } from "@/lib/supabase-admin";
+
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-import { getSupabaseAdmin } from "@/lib/supabase-admin";
-
-const supabase = getSupabaseAdmin();
-
-
 export async function GET() {
+  const supabase = getSupabaseAdmin();
+
   try {
     console.log("---- WALLET STATS COMPUTE START ----");
 
-    // Fetch only trades of migrated (Bags) tokens
     const { data: trades, error } = await supabase
       .from("trades")
       .select("wallet, side, price, amount, token_mint");
 
     if (error) {
-      console.error("FETCH TRADES ERROR =", error);
       return Response.json({ error: error.message }, { status: 500 });
     }
 
-    // wallet -> pnl, trades_count
-    const walletMap: Record<
-      string,
-      { pnl: number; trades: number }
-    > = {};
-
-    // token+wallet -> avg buy price & size
+    const walletMap: Record<string, { pnl: number; trades: number }> = {};
     const positionMap: Record<
       string,
       { buyValue: number; buyAmount: number }
@@ -47,7 +38,7 @@ export async function GET() {
         positionMap[key].buyAmount += Number(t.amount);
       }
 
-      if (t.side === "sell" && positionMap[key]?.buyAmount > 0) {
+      if (t.side === "sell" && positionMap[key]?.buyAmount) {
         const avgBuy =
           positionMap[key].buyValue / positionMap[key].buyAmount;
 
@@ -59,30 +50,20 @@ export async function GET() {
       }
     }
 
-    let upserted = 0;
-
     for (const wallet of Object.keys(walletMap)) {
       const w = walletMap[wallet];
+      if (w.trades < 3) continue;
 
-      if (w.trades < 3) continue; // filter noise
-
-      const { error } = await supabase.from("wallet_stats").upsert({
+      await supabase.from("wallet_stats").upsert({
         wallet,
         total_pnl: w.pnl,
         trades_count: w.trades,
         last_updated: new Date(),
       });
-
-      if (!error) upserted++;
     }
 
-    return Response.json({
-      status: "ok",
-      wallets_processed: Object.keys(walletMap).length,
-      upserted,
-    });
+    return Response.json({ status: "ok" });
   } catch (e: any) {
-    console.error("WALLET STATS ERROR =", e);
     return Response.json({ error: e.message }, { status: 500 });
   }
 }
