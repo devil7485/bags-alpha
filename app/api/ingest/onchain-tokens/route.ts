@@ -1,3 +1,6 @@
+export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
+
 import { getSupabaseAdmin } from "@/lib/supabase-admin";
 
 const RPC_URL = process.env.SOLANA_RPC_URL!;
