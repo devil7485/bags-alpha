@@ -1,38 +1,51 @@
-import { supabaseAdmin as supabase } from "@/lib/supabase-admin";
 import { NextRequest } from "next/server";
+import { supabaseAdmin as supabase } from "@/lib/supabase-admin";
 
 export async function GET(
-  _req: NextRequest,
-  context: { params: Promise<{ address: string }> }
+  request: NextRequest,
+  context: any
 ) {
   try {
-    const { address } = await context.params;
+    // IMPORTANT: read params inside the function
+    const address = context.params?.address;
+
+    if (!address) {
+      return Response.json(
+        { error: "Wallet address missing" },
+        { status: 400 }
+      );
+    }
 
     const [walletStats, alphaStats, devStats] = await Promise.all([
       supabase
         .from("wallet_stats")
         .select("*")
         .eq("wallet", address)
-        .single(),
+        .maybeSingle(),
+
       supabase
         .from("alpha_stats")
         .select("*")
         .eq("wallet", address)
-        .single(),
+        .maybeSingle(),
+
       supabase
         .from("dev_stats")
         .select("*")
         .eq("creator_wallet", address)
-        .single(),
+        .maybeSingle(),
     ]);
 
     return Response.json({
       wallet: address,
-      wallet_stats: walletStats.data || null,
-      alpha_stats: alphaStats.data || null,
-      dev_stats: devStats.data || null,
+      wallet_stats: walletStats.data ?? null,
+      alpha_stats: alphaStats.data ?? null,
+      dev_stats: devStats.data ?? null,
     });
   } catch (e: any) {
-    return Response.json({ error: e.message }, { status: 500 });
+    return Response.json(
+      { error: e.message },
+      { status: 500 }
+    );
   }
 }
